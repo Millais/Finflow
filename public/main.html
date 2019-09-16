@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Finflow: Spending Analysis</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+	<script src="//d3js.org/d3.v3.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="//cdn.rawgit.com/misoproject/d3.chart/master/d3.chart.min.js"></script>
+	<script src="//cdn.rawgit.com/q-m/d3.chart.sankey/master/d3.chart.sankey.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+<body>
+	<div class="container-fluid" style="padding:1cm; padding-bottom: 15%; background: #2980b9;  /* fallback for old browsers */
+	background: -webkit-linear-gradient(to right, #2c3e50, #2980b9);  /* Chrome 10-25, Safari 5.1-6 */
+	background: linear-gradient(to right, #2c3e50, #2980b9); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */">
+	<div class="row">
+		<div class="col-md-3">
+
+			<div class="row">
+				<div class="col-3"> <img src="logo.png" class="img-fluid" alt="Finflow Logo" height = "120px"> </div>
+				<div class="col-9 d-flex align-items-center"> <p class="lead" id="subtitleMonth"></p> </div>
+			</div>
+
+			<div class="row">
+				<div class="col s12 m6">
+					<div class="card blue-grey darken-1">
+						<div class="card-content white-text">
+							<div id="emptyAnalysisMessage">Switch between months below.</div>
+							<div id="highlightAnalysis">
+								<span class="card-title" id="totalSpending"></span></span>
+								<p> <span id="monthHighlight"/></p>
+								<br><p id="averageSpend"></p>
+								<b> <p id="monthSavings"></p></b>
+							</div>
+						</div>
+						<div class="card-action">
+							<div class="row" style="margin-bottom:0">
+								<div class="col-3">
+								</div>
+								<div class="col-9">
+									<a href="#!" style="float:right" id="nextMonth">Next</a>
+									<a href="#!" style="float:right" id="prevMonth">Prev</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col s12 m6">
+					<div class="card blue-grey darken-1" id="categoryBreakdownCard">
+						<div class="card-content white-text">
+							<p id="totalIncome"></p>
+							<br>
+							<div id="categoryAnalysis">
+							</div>
+							<div id="categoryAnalysisLeaves">
+							</div>
+						</div>            
+						<div class="card-action">
+							<div class="row" style="margin-bottom:0">
+								<div class="col-12">
+									<a href="#!" style="float:right" id="toggleLeafCategories">Show All</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<form action="#" style="padding-left: 5%" id="categoryControls">
+					<div class="form-check">
+						<input type="checkbox" id="removeBills" />
+						<label for="removeBills">Hide&nbsp;Bills</label>
+					</div>
+					<div class="form-check ">
+						<input type="checkbox" id="removeSavings" />
+						<label for="removeSavings">Hide&nbsp;Savings</label>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<div class="col-md-9" style="padding-left: 5%">
+
+			<div class="row">
+				<div id="chart" style = "width: 900px"></div>
+			</div>
+			<div id="transactionTableSection">
+				<div class="row" style="margin-bottom: 5px">
+					<h3 class="display-4" style="font-size: 2rem">Transactions</h3>
+				</div>
+
+				<div class="row">
+					<div id="chiprow"></div>
+				</div>
+
+				<div class="row">
+					<div class="card blue-grey lighten-5 black-text" style = "width: 900px">
+						<div class="card-content">
+							<table class ="bordered">
+								<tbody id = "transactionTable">
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+var activeCategories = [];
+var chart = null;
+var startDate = null;
+var endDate = null;
+var currentMonth = null;
+var currentYear = null;
+var monthNames = [ "January", "February", "March", "April", "May", "June", 
+"July", "August", "September", "October", "November", "December" ];
+
+// Let's extend the Date object
+Date.prototype.getFullMonth = function() {
+	return monthNames[this.getMonth()];
+}
+
+Date.prototype.getSuccinctMonth = function() {
+	var succinctMonthNames = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ];
+	return succinctMonthNames[this.getMonth()];
+}
+
+function daysInMonth(month,year) {
+	return new Date(year, month+1, 0).getDate();
+}
+
+function setupView(from, to){
+
+	var endpoint = "/graph/";
+
+	// Use the in-view dates if the dates aren't defined
+	if (from != undefined || to != undefined){
+		endpoint = endpoint + (Date.parse(from)/1000) + '-' + (Date.parse(to)/1000);
+	} else{
+		endpoint = endpoint + (Date.parse(startDate)/1000) + '-' + (Date.parse(endDate)/1000);
+	}
+
+	// Request hidden categories if selected
+	var hiddenCategories = [];
+	if ($('#removeBills').prop('checked')){
+		hiddenCategories.push('Bill');
+	}
+	if ($('#removeSavings').prop('checked')){
+		hiddenCategories.push('Savings');
+	}
+
+	var postData = {};
+	postData.hiddenCategories = hiddenCategories;
+
+	// Get graph and transactional data for the current period
+	$.ajax({
+		url: endpoint,
+		type: "POST",
+		data: JSON.stringify(postData),
+		contentType: "application/json",
+		success: function(data, status, xhr) {
+			updateSubtitle(data.fromDate, data.toDate)
+
+			if (Object.keys(data.graphJson).length === 0){
+				showEmptyView()
+			}else{
+				toggleSectionViews(true);
+				renderChart(data.graphJson);
+				updateTransactionTable();
+				updateSidebar();
+			}
+		},
+	});
+}
+
+function updateSidebar(){
+	$.ajax({
+		url: '/analysis/' + (Date.parse(startDate)/1000) + '-' + (Date.parse(endDate)/1000),
+		type: "POST",
+		contentType: "application/json",
+		success: function(data, status) {
+
+			var monthSpend = data.overallSpending.monthSpend;
+			var monthIncome = data.overallSpending.monthIncome;
+			var averageSpend = data.overallSpending.averageSpend;
+			var breakdown = data.breakdown;
+
+			// Top box: highlight figures and categories
+			$('#totalSpending').html("Total Spending: £" + monthSpend);
+			$('#monthHighlight').html(getHighlightedCategories(breakdown)); 
+			$('#averageSpend').html("Average Spend: £" + averageSpend + " ("+ getSign(monthSpend, averageSpend) + "£" + Math.abs(averageSpend - monthSpend) + ")");
+			$('#monthSavings').html("£" + (monthIncome - monthSpend) + (((monthIncome - monthSpend) > 0) ? " saved 👍" : " down 😥"));
+
+			// Bottom box: category breakdown
+			$('#categoryAnalysis').empty(); 
+			$('#categoryAnalysisLeaves').empty();
+			$('#totalIncome').html("Your total income this month was <b>£" + monthIncome + "</b>. Here's where it went:");
+
+			// List all categories with spend, skipping the first index which is usually the Income category
+			for (var i =1; i < breakdown.length; i++){
+				if (breakdown[i].monthSpend != 0){
+					// Add leaves to a different section (hidden by default) to avoid information overload
+					if (breakdown[i].isLeaf){
+						$('#categoryAnalysisLeaves').append("<p>"+ breakdown[i].categoryName + "<span class = 'expenseamount'>£" + parseFloat(breakdown[i].monthSpend).toFixed(0) + getStateIcon(breakdown[i].state) + "</span></p>"); 
+					}else{
+						$('#categoryAnalysis').append("<p>"+ breakdown[i].categoryName + "<span class = 'expenseamount'>£" + parseFloat(breakdown[i].monthSpend).toFixed(0) + getStateIcon(breakdown[i].state) + "</span></p>"); 
+					}
+				}
+			}
+		}
+	});
+}
+
+// Crude way of retrieving significant changes between month to month spending on categories
+// Consider improved approaches to targeting categories which are more likely that the user can change (e.g remove bills)
+function getHighlightedCategories(categoryBreakdown){
+
+	var highlightText = "You spent more than average this month on ";
+	var count = 0;
+
+	for (var i = 0; i < categoryBreakdown.length; i++) {
+		if (categoryBreakdown[i].state != "Up" || categoryBreakdown[i].categoryName == "Income"){
+			continue;
+		}else{
+			if (count == 0){
+				highlightText += "<b>" + categoryBreakdown[i].categoryName + "</b> ";
+			}else if (count == 1){
+				highlightText += "and <b>" + categoryBreakdown[i].categoryName + "</b>.";
+			}else if (count >2){
+				break;
+			}
+			count++;
+		}
+	}
+
+	// Quick approach to capturing the case where there is no higher than average spending
+	if (count == 0){
+		highlightText += "nothing. Great job! 🙌";
+	}
+	return highlightText;
+}
+
+function getSign(month, average){
+	if (month >= average){
+		return "+";
+	}
+	return "-";
+}
+
+function getStateIcon(state){
+	if (state === "Up"){
+		return "<span class='expenseup'>↑</span>";
+	}else if (state === "Down"){
+		return "<span class='expensedown'>↓</span>";
+	}
+	return "<span class='expensenochange'>&nbsp;&nbsp;</span>";
+}
+
+function renderChart (json){
+	chart = d3.select("#chart").append("svg").chart("Sankey");
+
+	["click"].forEach(function(evt) {
+		chart.on("link:"+evt, function(link) {
+			updateSelectedCategories(link.target.name);
+		});
+	});
+
+	chart
+	.nodeWidth(8)
+	.nodePadding(15)
+	.iterations(0)
+	.spread(false);
+
+	chart.draw(json);
+
+	d3.selectAll("text").style("fill", "white");
+	d3.selectAll("text").style("opacity", "0.9");
+	d3.selectAll("text").style("font-weight", "300");
+}
+
+function updateSelectedCategories(category){
+	if ($.inArray(category, activeCategories) === -1){
+		activeCategories.push(category);
+	}else{
+		activeCategories = activeCategories.filter(function(e) {return e !== category});
+	}
+
+	updateTransactionTable();
+}
+
+// Refresh the transaction table to reflect the categories currently selected
+function updateTransactionTable(){
+
+	var postData = {activeCategories: activeCategories};
+
+	$.ajax({
+		url: 'transactions/' + (Date.parse(startDate)/1000) + '-' + (Date.parse(endDate)/1000),
+		type: "POST",
+		data: JSON.stringify(postData),
+		contentType: "application/json",
+		success: function(data, status) {
+			if (data.length ==0){
+				showEmptyTransactionView();
+			}else{
+				$("#transactionTable").empty();
+				for (var i=0; i < data.length; i++){
+					$("#transactionTable").append('<tr><td>' + data[i].date + '</td><td>' + data[i].category + '</td><td><b>' + ((data[i].value < 0) ? '£' + data[i].value*-1 : '<font color="green">£' + data[i].value + '</font') + '</b></td><td>' + data[i].name + '</td></tr>');
+				}
+			}
+		}
+	});
+
+	// Update the chips representing active categories
+	$('#chiprow').empty();
+	for (var i=0; i < activeCategories.length; i++){
+		$('#chiprow').append('<div class="chip">' + activeCategories[i] + '&nbsp; <a onClick="updateSelectedCategories(\'' + activeCategories[i] + '\')" href="#!"> <i>&times;</i></a>');
+	}
+}
+
+function updateSubtitle(from, to){
+	var fromDate = new Date(parseInt(from) * 1000);
+	var toDate = new Date(parseInt(to) * 1000);
+	$('#subtitleMonth').html(fromDate.getFullMonth() + " " + fromDate.getFullYear());
+}
+
+function showEmptyTransactionView(){
+	$("#transactionTable").empty();
+	$("#transactionTable").append('<tr style="border-bottom: none"><td> <i>No transactions yet </i></td></tr>');
+}
+
+function showEmptyView(){
+	$('#chart').html('<p class="lead" style="padding-top:10%">No transactions in this period.</p>');
+	toggleSectionViews(false);
+}
+
+function toggleSectionViews(visible){
+	if (visible){
+		$('#categoryBreakdownCard').show();
+		$('#categoryControls').show();
+		$('#transactionTableSection').show();
+		$('#highlightAnalysis').show();
+		$('#emptyAnalysisMessage').hide();
+	}else{
+		$('#categoryBreakdownCard').hide();
+		$('#categoryControls').hide();
+		$('#transactionTableSection').hide();
+		$('#highlightAnalysis').hide();
+		$('#emptyAnalysisMessage').show();
+	}
+}
+
+function resetView(){
+	d3.select("#chart svg").remove();
+	$('#chart').html('');
+}
+
+function setInitialView(){
+	currentMonth = new Date().getMonth();
+	currentYear = new Date().getFullYear();
+	setMonthView();
+}
+
+function setMonthView(){
+	startDate = "1 " + monthNames[currentMonth] + ", " + currentYear.toString();
+	endDate = daysInMonth(currentMonth, currentYear).toString() + " " + monthNames[currentMonth] + ", " + currentYear.toString();
+
+	resetView();
+	setupView(startDate, endDate);
+}
+
+function incrementMonth(){
+	if (currentMonth == 11){
+		currentMonth = 0;
+		currentYear++;
+	}else{
+		currentMonth++;
+	}
+}
+
+function decrementMonth(){
+	if (currentMonth == 0){
+		currentMonth = 11;
+		currentYear--;
+	}else{
+		currentMonth--;
+	}
+}
+
+function toggleLeafCategories(){
+	if ($('#categoryAnalysisLeaves').is(":hidden")){
+		$('#categoryAnalysisLeaves').slideDown();
+		$('#toggleLeafCategories').text("Back To Overview")
+	}else{
+		$('#categoryAnalysisLeaves').slideUp();
+		$('#toggleLeafCategories').text("Show All")
+	}
+}
+
+
+$(document).ready(function(){
+
+	$('#finishDate').change(function(){
+		resetView();
+		setupView($('#startDate').val(), $('#finishDate').val());
+	});
+
+	$('#nextMonth').click(function(){
+		incrementMonth();
+		setMonthView();
+	});
+
+	$('#prevMonth').click(function(){
+		decrementMonth();
+		setMonthView();
+	});
+
+	$('#toggleLeafCategories').click(function(){
+		toggleLeafCategories();
+	});
+
+	$('#removeBills, #removeSavings').change(function(){
+		resetView();
+		setupView();
+	});
+
+	$('#categoryAnalysisLeaves').hide();
+
+	showEmptyTransactionView();
+	setInitialView();
+});
+
+</script>
+</body>
+</html>

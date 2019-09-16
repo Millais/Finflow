@@ -1,0 +1,95 @@
+body{
+  color: #fff;
+}
+
+a{
+  color:#ffab40;
+  text-decoration: none;
+}
+
+a:hover{
+  text-decoration:none;
+}
+
+#chart {
+  height: 500px;
+  width: 960px;
+  clear: both;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  vertical-align: top;
+  overflow: hidden;
+}
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 0;
+}
+
+.node rect {
+  fill-opacity: .9;
+  shape-rendering: crispEdges;
+}
+.node text {
+  color: #fff;
+}
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .2;
+}
+.link:hover {
+  fill: none;
+  stroke: #555;
+  stroke-opacity: .5;
+}
+.link:active {
+  fill: none;
+  stroke: #DE7B3C;
+  stroke-opacity: .8;
+}
+.control               { float: left; padding: 6px; }
+.control label         { display: block; }
+.control input         { width: 2.5em; }
+.control button        { border: outset 2px; }
+.control button.active { border: inset 2px; }
+
+#events {
+  height: 15ex;
+  overflow-y: scroll;
+  color: #444;
+  font-family: monospace;
+  border: 1px solid #eee;
+}
+#events span:first-child {
+  width: 10em;
+  display: inline-block;
+}
+
+.expenseup{
+  color: #ff6e6e !important; 
+  padding:0;
+  margin:0;
+}
+
+.expensedown{
+  color: #93ffac !important;
+  padding:0;
+  margin:0;
+}
+
+.expensenochange{
+  color: #93ffac !important;
+  padding:0;
+  margin:0;
+}
+
+.expenseamount{
+  float: right;
+}
