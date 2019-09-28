@@ -4,7 +4,7 @@
 
 > A prototype personal finance visualisation tool created in response to the introduction of PSD2 regulations in January 2018. Designed to be a companion to existing financial dashboards, Finflow is a project motivated by a desire to explore the opportunities of Open Banking, as well as a personal challenge to obtain deeper knowledge of Javascript & D3.
 
-FinFlow is a prototype visualisation tool for exploring categorised spending data. Features include:
+Finflow is a prototype visualisation tool for exploring categorised spending data. Features include:
 * Dynamically generated Sankey visualisation
 * Transaction filtering using visualisation interactivity
 * Monthly spending summaries with category breakdowns
@@ -23,7 +23,7 @@ With large changes looming across the European payments market in January 2018, 
 I quickly came to the conclusion that what I had planned was not going to be a replacement for these services; rather a companion – at least initially – while external APIs across financial institutions were in their infancy. In addition, through my [dissertation](https://github.com/Millais/VirtualRealityExplorer/) I had read many papers speak of habituation issues with new quantified self platforms. This tool was therefore not intended as the direct entry point to my financial life, but purposefully designed as a supplementary visualisation tool to existing platforms.
 
 ##### Specifics
-December 2017 saw an influx of salary-related posts on [r/dataisbeautiful](https://www.reddit.com/r/dataisbeautiful/) based on Sankey diagrams. These diagrams clearly articulate complex datasets with connections for multi-layered data. Flows of financial data (hence: _FinFlow_) can be isolated from a wider dataset for deeper analysis. With plenty of interaction possibilities based around this – as well as a distinct visualisation design – the Sankey diagram appeared to be the natural choice for visualising my financial data. At the time, no major budgeting platform made use of this visualisation technique.
+December 2017 saw an influx of salary-related posts on [r/dataisbeautiful](https://www.reddit.com/r/dataisbeautiful/) based on Sankey diagrams. These diagrams clearly articulate complex datasets with connections for multi-layered data. Flows of financial data (hence: _Finflow_) can be isolated from a wider dataset for deeper analysis. With plenty of interaction possibilities based around this – as well as a distinct visualisation design – the Sankey diagram appeared to be the natural choice for visualising my financial data. At the time, no major budgeting platform made use of this visualisation technique.
 
 ![Example Sankey Diagram from Wikipedia](images/3_ExampleSankey.jpg)
 *Example Sankey diagram [from Wikipedia](https://commons.wikimedia.org/wiki/File:Sankey_Diagram_of_Colorado_River_Water_Use.jpg) beginning with a set input (i.e income) and shows various outputs flowing off (i.e spending categories)*
